@@ -1,0 +1,45 @@
+name: Build Smart Remote APK
+
+on:
+  workflow_dispatch:
+  push:
+    paths:
+      - 'flutter_app/**'
+      - '.github/workflows/build-smart-remote.yml'
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup Flutter
+        uses: subosito/flutter-action@v2
+        with:
+          channel: stable
+          flutter-version: '3.35.0'
+          cache: true
+
+      - name: Create Android Flutter project scaffold
+        working-directory: flutter_app
+        run: flutter create --platforms=android --org com.techsmartpro360 smart_remote_build
+
+      - name: Copy app source into generated project
+        run: |
+          cp flutter_app/pubspec.yaml flutter_app/smart_remote_build/pubspec.yaml
+          cp flutter_app/lib/main.dart flutter_app/smart_remote_build/lib/main.dart
+
+      - name: Get packages
+        working-directory: flutter_app/smart_remote_build
+        run: flutter pub get
+
+      - name: Build release APK
+        working-directory: flutter_app/smart_remote_build
+        run: flutter build apk --release
+
+      - name: Upload APK
+        uses: actions/upload-artifact@v4
+        with:
+          name: smart-remote-release
+          path: flutter_app/smart_remote_build/build/app/outputs/flutter-apk/app-release.apk
